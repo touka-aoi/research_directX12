@@ -1,23 +1,9 @@
-#include <Windows.h>
-#include <debugapi.h>
-#include <iostream>
-
-using namespace std;
+#include "stdafx.h"
+#include "WinApplication.h"
 
 
-// WINDOW PROCEDURE
-LRESULT WindowProcedure(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
+int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int nCmdShow)
 {
-	// QUIT_MESSAGE
-	if (msg == WM_DESTROY) {
-		PostQuitMessage(0);
-		return 0;
-	}
-	return DefWindowProc(hwnd, msg, wparam, lparam);
+	WinApplication::Run(hInstance, nCmdShow);
 }
 
-int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
-{
-	OutputDebugStringW(L"[INFO] : Show window Test\n");
-	return 0;
-}
