@@ -20,10 +20,16 @@ public:
     //void PopulateCommandList();
     //void WaitForPreviousFrame();
 
+    // アクセサ
+    UINT GetWidth() const { return m_width; }
+    UINT GetHeight() const { return m_height; }
+    const WCHAR* GetTitle() const { return m_title.c_str(); }
+
     void GetHardwareAdapter(
         IDXGIFactory1* pFactory, // ファクトリ
         IDXGIAdapter1** ppAdapter, // アダプターへのポインタ
         bool requestHighPerformanceAdapter = false);
+
 protected:
     UINT m_width;
     UINT m_height;

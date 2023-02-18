@@ -1,9 +1,10 @@
 #include "stdafx.h"
-#include "WinApplication.h"
+#include "D3D12Touka.h"
 
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int nCmdShow)
 {
-	WinApplication::Run(hInstance, nCmdShow);
+	D3D12Touka touka(1920, 1080, L"D3D12 touka");
+	WinApplication::Run(&touka, hInstance, nCmdShow);
 }
 

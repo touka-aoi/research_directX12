@@ -151,3 +151,4 @@ void D3D12Touka::GetHardwareAdapter(
 	}
 	*ppAdapter = adapter.Detach();
 }
+

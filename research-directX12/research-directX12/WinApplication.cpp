@@ -1,12 +1,9 @@
 ﻿#include "stdafx.h"
 #include "WinApplication.h"
 
-#define WINDOW_WIDTH 1920
-#define WINDOWS_HEIGHT 1080
-
 HWND WinApplication::m_hwnd = nullptr;
 
-int WinApplication::Run(HINSTANCE hInstance, int nCmdShow)
+int WinApplication::Run(D3D12Touka* pTouka, HINSTANCE hInstance, int nCmdShow)
 {
 	WNDCLASSEX windowClass = { 0 };
 	windowClass.cbSize = sizeof(WNDCLASSEX);
@@ -16,13 +13,13 @@ int WinApplication::Run(HINSTANCE hInstance, int nCmdShow)
 
 	RegisterClassEx(&windowClass); // クラス登録
 
-	RECT windowRect = { 0, 0, WINDOW_WIDTH, WINDOWS_HEIGHT }; // クライアントサイズ
+	RECT windowRect = { 0, 0, static_cast<LONG>(pTouka->GetWidth()), static_cast<LONG>(pTouka->GetHeight())}; // クライアントサイズ
 	AdjustWindowRect(&windowRect, WS_OVERLAPPEDWINDOW, FALSE); //ウィンドウサイズへ調整
 
 	//ウィンドウオブジェクトの作成
 	m_hwnd = CreateWindow(
 		windowClass.lpszClassName, //クラス名
-		L"DX12Sample",
+		pTouka->GetTitle(),
 		WS_OVERLAPPEDWINDOW, 
 		CW_USEDEFAULT, //表示座標
 		CW_USEDEFAULT,
@@ -31,11 +28,11 @@ int WinApplication::Run(HINSTANCE hInstance, int nCmdShow)
 		nullptr, //親ウィンドウ
 		nullptr, //メニュー
 		hInstance, //アプリケーションハンドル
-		nullptr //追加param
+		pTouka //追加param
 	);
 
 	// DirectX Init
-	// ここにDirectXのInit()
+	pTouka->OnInit();
 
 	ShowWindow(m_hwnd, nCmdShow);
 

@@ -1,9 +1,13 @@
 #pragma once
 
+#include "D3D12Touka.h"
+
+class D3D12Touka;
+
 class WinApplication
 {
 public:
-    static int Run(HINSTANCE hInstance, int nCmdShow); // 開始関数
+    static int Run(D3D12Touka* pTouka, HINSTANCE hInstance, int nCmdShow); // 開始関数
     static HWND GetHwnd() { return m_hwnd; } // アクセサ
 
 protected:
