@@ -4,6 +4,8 @@
 #define WINDOW_WIDTH 1920
 #define WINDOWS_HEIGHT 1080
 
+HWND WinApplication::m_hwnd = nullptr;
+
 int WinApplication::Run(HINSTANCE hInstance, int nCmdShow)
 {
 	WNDCLASSEX windowClass = { 0 };
@@ -18,7 +20,7 @@ int WinApplication::Run(HINSTANCE hInstance, int nCmdShow)
 	AdjustWindowRect(&windowRect, WS_OVERLAPPEDWINDOW, FALSE); //ウィンドウサイズへ調整
 
 	//ウィンドウオブジェクトの作成
-	HWND hwnd = CreateWindow(
+	m_hwnd = CreateWindow(
 		windowClass.lpszClassName, //クラス名
 		L"DX12Sample",
 		WS_OVERLAPPEDWINDOW, 
@@ -35,7 +37,7 @@ int WinApplication::Run(HINSTANCE hInstance, int nCmdShow)
 	// DirectX Init
 	// ここにDirectXのInit()
 
-	ShowWindow(hwnd, nCmdShow);
+	ShowWindow(m_hwnd, nCmdShow);
 
 
 	// Main loop

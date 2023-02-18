@@ -1,7 +1,10 @@
 ﻿#include "stdafx.h"
 #include "D3D12Touka.h"
 
-D3D12Touka::D3D12Touka(UINT width, UINT height, std::wstring name)
+D3D12Touka::D3D12Touka(UINT width, UINT height, std::wstring name) :
+	m_width(width),
+	m_height(height),
+	m_title(name)
 {
 }
 
@@ -26,6 +29,67 @@ void D3D12Touka::LoadPipeline()
 	// DirectXの初期化
 	ThrowIfFailed(D3D12CreateDevice(hardwareAdapter.Get(), D3D_FEATURE_LEVEL_12_1, IID_PPV_ARGS(&m_device)));
 
+	// コマンドキューの作成
+	D3D12_COMMAND_QUEUE_DESC queueDesc = {};
+	queueDesc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
+	queueDesc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
+
+	ThrowIfFailed(m_device->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&m_commandQueue)));
+
+	// スワップチェーンの作成
+	DXGI_SWAP_CHAIN_DESC1 swapCahinDesc = {};
+	swapCahinDesc.BufferCount = FrameCount;
+	swapCahinDesc.Width = m_width;
+	swapCahinDesc.Height = m_height;
+	swapCahinDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	swapCahinDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+	swapCahinDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
+	swapCahinDesc.SampleDesc.Count = 1;
+
+	ComPtr<IDXGISwapChain1> swapChain;
+	ThrowIfFailed(factory->CreateSwapChainForHwnd(
+		m_commandQueue.Get(),
+		WinApplication::GetHwnd(),
+		&swapCahinDesc,
+		nullptr,
+		nullptr,
+		&swapChain
+	));
+
+	// フルスクリーンの切り替えを許可
+	ThrowIfFailed(factory->MakeWindowAssociation(WinApplication::GetHwnd(), DXGI_MWA_NO_ALT_ENTER));
+
+	// 現在のバックバッファを取得する
+	ThrowIfFailed(swapChain.As(&m_swapChain));
+	m_frameIndex = m_swapChain->GetCurrentBackBufferIndex();
+
+	// ディスクリプタヒープの作成
+	{
+		// render target view (RTV) の ディスクリプタヒープの作成
+		D3D12_DESCRIPTOR_HEAP_DESC rtvHeapDesc = {};
+		rtvHeapDesc.NumDescriptors = FrameCount;
+		rtvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
+		rtvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+		ThrowIfFailed(m_device->CreateDescriptorHeap(&rtvHeapDesc, IID_PPV_ARGS(&m_rtvHeap)));
+
+		m_rtvDescriptorSize = m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+	}
+
+	// フレームリソースの作成
+	{
+		CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(m_rtvHeap->GetCPUDescriptorHandleForHeapStart());
+
+		// 各フレームについてRTVを作成する
+		for (UINT n = 0; n < FrameCount; n++)
+		{
+			ThrowIfFailed(m_swapChain->GetBuffer(n, IID_PPV_ARGS(&m_renderTargets[n])));
+			m_device->CreateRenderTargetView(m_renderTargets[n].Get(), nullptr, rtvHandle);
+			rtvHandle.Offset(1, m_rtvDescriptorSize);
+		}
+	}
+
+	// コマンドアロケータの作成
+	ThrowIfFailed(m_device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&m_commandAllocator)));
 }
 
 void D3D12Touka::GetHardwareAdapter(
