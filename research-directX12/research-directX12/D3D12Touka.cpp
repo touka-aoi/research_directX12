@@ -11,12 +11,25 @@ D3D12Touka::D3D12Touka(UINT width, UINT height, std::wstring name) :
 void D3D12Touka::OnInit()
 {
 	LoadPipeline();
-	//LoadAssets();
+	LoadAssets();
 }
 
 void D3D12Touka::LoadPipeline()
 {
 	UINT dxgiFactoryFllags = 0;
+
+#if defined(_DEBUG)
+	// デバッグレイヤーの有効化
+	{
+		ComPtr<ID3D12Debug> debugController;
+		if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&debugController))));
+		{
+			debugController->EnableDebugLayer();
+			dxgiFactoryFllags |= DXGI_CREATE_FACTORY_DEBUG;
+		}
+	}
+
+#endif
 
 	// ファクトリの作成
 	ComPtr<IDXGIFactory4> factory;
@@ -92,6 +105,68 @@ void D3D12Touka::LoadPipeline()
 	ThrowIfFailed(m_device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&m_commandAllocator)));
 }
 
+void D3D12Touka::LoadAssets()
+{
+	// コマンドリストの作成
+	ThrowIfFailed(m_device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_commandAllocator.Get(), nullptr, IID_PPV_ARGS(&m_commandList)));
+
+	// コマンドリストを登録状態に
+	ThrowIfFailed(m_commandList->Close());
+
+	// フェンスの作成
+	{
+		ThrowIfFailed(m_device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_fence)));
+		m_fenceValue = 1;
+
+		// 同期イベントの作成
+		m_fenceEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
+	
+		WaitForPreviousFrame();
+	}
+}
+
+void D3D12Touka::OnUpdate()
+{
+}
+
+void D3D12Touka::OnRender()
+{
+	// コマンドリストを記録する
+	PopulateCommandList();
+	// コマンドリストの実行
+	ID3D12CommandList* ppCommandLists[] = { m_commandList.Get() };
+	m_commandQueue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
+
+	// フリップ
+	ThrowIfFailed(m_swapChain->Present(1, 0));
+
+	WaitForPreviousFrame();
+}
+
+void D3D12Touka::PopulateCommandList()
+{
+	// コマンドリストのリセット
+	ThrowIfFailed(m_commandAllocator->Reset());
+
+	ThrowIfFailed(m_commandList->Reset(m_commandAllocator.Get(), nullptr));
+
+	// バックバッファーをRTVとして使用
+	m_resourceBarrier = CD3DX12_RESOURCE_BARRIER::Transition(m_renderTargets[m_frameIndex].Get(), D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET);
+	m_commandList->ResourceBarrier(1, &m_resourceBarrier);
+
+	CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(m_rtvHeap->GetCPUDescriptorHandleForHeapStart(), m_frameIndex, m_rtvDescriptorSize);
+	m_commandList->OMSetRenderTargets(1, &rtvHandle, FALSE, nullptr);
+
+	// レンダーターゲットのクリア
+	const float clearColor[] = { 0.0f, 0.2f, 0.4f, 1.0f };
+	m_commandList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
+
+	m_resourceBarrier = CD3DX12_RESOURCE_BARRIER::Transition(m_renderTargets[m_frameIndex].Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT);
+	m_commandList->ResourceBarrier(1, &m_resourceBarrier);
+
+	ThrowIfFailed(m_commandList->Close());
+}
+
 void D3D12Touka::GetHardwareAdapter(
 	IDXGIFactory1* pFactory,
 	IDXGIAdapter1** ppAdapter,
@@ -152,3 +227,19 @@ void D3D12Touka::GetHardwareAdapter(
 	*ppAdapter = adapter.Detach();
 }
 
+void D3D12Touka::WaitForPreviousFrame()
+{
+	const UINT64 fence = m_fenceValue;
+	ThrowIfFailed(m_commandQueue->Signal(m_fence.Get(), fence));
+	m_fenceValue++;
+
+	// フェンスの値が変更されるまで待つ
+	if (m_fence->GetCompletedValue() < fence)
+	{
+		// イベントの通知
+		ThrowIfFailed(m_fence->SetEventOnCompletion(fence, m_fenceEvent));
+		WaitForSingleObject(m_fenceEvent, INFINITE);
+	}
+
+	m_frameIndex = m_swapChain->GetCurrentBackBufferIndex();
+}

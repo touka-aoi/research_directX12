@@ -33,9 +33,9 @@ int WinApplication::Run(D3D12Touka* pTouka, HINSTANCE hInstance, int nCmdShow)
 
 	// DirectX Init
 	pTouka->OnInit();
+	SetWindowLongPtr(m_hwnd, GWLP_USERDATA, (LONG_PTR)pTouka);
 
 	ShowWindow(m_hwnd, nCmdShow);
-
 
 	// Main loop
 	MSG msg = {};
@@ -57,11 +57,22 @@ int WinApplication::Run(D3D12Touka* pTouka, HINSTANCE hInstance, int nCmdShow)
 
 LRESULT CALLBACK WinApplication::WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
+	// DXクラスポインタを取得
+	D3D12Touka* pTouka = reinterpret_cast<D3D12Touka*>(GetWindowLongPtr(hWnd, GWLP_USERDATA));
+
 	switch (message)
 	{
 	case WM_DESTROY:
 		PostQuitMessage(0);
 		return 0;
+	case WM_PAINT:
+		if (pTouka)
+		{
+			pTouka->OnRender();
+			
+		}
+		return 0;
 	}
+	
 	return DefWindowProc(hWnd, message, wParam, lParam);
 }
