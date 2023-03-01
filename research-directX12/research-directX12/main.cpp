@@ -1,23 +1,10 @@
-#include <Windows.h>
-#include <debugapi.h>
-#include <iostream>
-
-using namespace std;
+#include "stdafx.h"
+#include "D3D12Touka.h"
 
 
-// WINDOW PROCEDURE
-LRESULT WindowProcedure(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
+int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int nCmdShow)
 {
-	// QUIT_MESSAGE
-	if (msg == WM_DESTROY) {
-		PostQuitMessage(0);
-		return 0;
-	}
-	return DefWindowProc(hwnd, msg, wparam, lparam);
+	D3D12Touka touka(1920, 1080, L"D3D12 touka");
+	WinApplication::Run(&touka, hInstance, nCmdShow);
 }
 
-int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
-{
-	OutputDebugStringW(L"[INFO] : Show window Test\n");
-	return 0;
-}
