@@ -11,6 +11,7 @@
 #pragma comment(lib, "dxgi.lib")
 #include "d3dx12.h"
 
+#include <DirectXMath.h>
 #include <string>
 #include <wrl.h>
 

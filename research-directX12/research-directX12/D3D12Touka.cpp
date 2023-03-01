@@ -6,6 +6,7 @@ D3D12Touka::D3D12Touka(UINT width, UINT height, std::wstring name) :
 	m_height(height),
 	m_title(name)
 {
+	m_aspectRatio = static_cast<float>(width) / static_cast<float>(height);
 }
 
 void D3D12Touka::OnInit()
@@ -113,6 +114,43 @@ void D3D12Touka::LoadAssets()
 	// コマンドリストを登録状態に
 	ThrowIfFailed(m_commandList->Close());
 
+	// 頂点バッファーの作成
+	{
+		Vertex triangleVertices[] =
+		{
+			{ { 0.0f, 0.25f * m_aspectRatio, 0.0f } },
+			{ { 0.25f, -0.25f * m_aspectRatio, 0.0f } },
+			 { { -0.25f, -0.25f * m_aspectRatio, 0.0f }}
+		};
+
+		const UINT vertexBufferSize = sizeof(triangleVertices);
+		CD3DX12_HEAP_PROPERTIES heapProp = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
+		CD3DX12_RESOURCE_DESC heapDesc = CD3DX12_RESOURCE_DESC::Buffer(vertexBufferSize);
+		// アップロードリソースの作成
+		ThrowIfFailed(m_device->CreateCommittedResource(
+			&heapProp,
+			D3D12_HEAP_FLAG_NONE,
+			&heapDesc,
+			D3D12_RESOURCE_STATE_GENERIC_READ,
+			nullptr,
+			IID_PPV_ARGS(&m_vertexBuffer)
+		));
+
+		// リソースへコピー
+		UINT8* pVertexDataBegin;
+		CD3DX12_RANGE readRange(0, 0);
+		ThrowIfFailed(m_vertexBuffer->Map(0, &readRange, reinterpret_cast<void**>(&pVertexDataBegin)));
+		memcpy(pVertexDataBegin, triangleVertices, sizeof(triangleVertices));
+		m_vertexBuffer->Unmap(0, nullptr);
+
+		// 頂点ビューの初期化
+		m_vertexBufferView.BufferLocation = m_vertexBuffer->GetGPUVirtualAddress();
+		m_vertexBufferView.StrideInBytes = sizeof(Vertex);
+		m_vertexBufferView.SizeInBytes = vertexBufferSize;
+
+	}
+
+
 	// フェンスの作成
 	{
 		ThrowIfFailed(m_device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_fence)));
@@ -150,7 +188,7 @@ void D3D12Touka::PopulateCommandList()
 
 	ThrowIfFailed(m_commandList->Reset(m_commandAllocator.Get(), nullptr));
 
-	// バックバッファーをRTVとして使用
+	// PresentをRTVにするバリア
 	m_resourceBarrier = CD3DX12_RESOURCE_BARRIER::Transition(m_renderTargets[m_frameIndex].Get(), D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET);
 	m_commandList->ResourceBarrier(1, &m_resourceBarrier);
 
@@ -161,6 +199,7 @@ void D3D12Touka::PopulateCommandList()
 	const float clearColor[] = { 0.0f, 0.2f, 0.4f, 1.0f };
 	m_commandList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
 
+	// RTVをPresentにするバリア
 	m_resourceBarrier = CD3DX12_RESOURCE_BARRIER::Transition(m_renderTargets[m_frameIndex].Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT);
 	m_commandList->ResourceBarrier(1, &m_resourceBarrier);
 
