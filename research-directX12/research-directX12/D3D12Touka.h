@@ -3,6 +3,7 @@
 #include "WinApplication.h"
 
 using Microsoft::WRL::ComPtr;
+using namespace DirectX;
 
 class D3D12Touka
 {
@@ -33,11 +34,18 @@ public:
 protected:
     UINT m_width;
     UINT m_height;
+    float m_aspectRatio;
 
 private:
     static const UINT FrameCount = 2; // スワップチェーンの枚数
     
     std::wstring m_title; // ウィンドウタイトル
+
+    struct Vertex
+    {
+        XMFLOAT3 position;
+        //XMFLOAT4 color;
+    };
 
     // Pipeline objects.
     ComPtr<ID3D12Device> m_device;
@@ -47,6 +55,11 @@ private:
     ComPtr<ID3D12DescriptorHeap> m_rtvHeap;
     ComPtr<ID3D12GraphicsCommandList> m_commandList;
     UINT m_rtvDescriptorSize;
+
+    // Application Resource
+    ComPtr<ID3D12Resource> m_vertexBuffer;
+    D3D12_VERTEX_BUFFER_VIEW m_vertexBufferView;
+
 
     // 同期オブジェクト
     UINT m_frameIndex; // バックバッファのインデックス
