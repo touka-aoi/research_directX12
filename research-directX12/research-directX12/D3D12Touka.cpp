@@ -6,6 +6,10 @@ D3D12Touka::D3D12Touka(UINT width, UINT height, std::wstring name) :
 	m_height(height),
 	m_title(name)
 {
+	WCHAR assetsPath[512];
+	GetAssetsPath(assetsPath, _countof(assetsPath));
+	m_assetsPath = assetsPath;
+
 	m_aspectRatio = static_cast<float>(width) / static_cast<float>(height);
 }
 
@@ -108,6 +112,25 @@ void D3D12Touka::LoadPipeline()
 
 void D3D12Touka::LoadAssets()
 {
+	// パイプラインステート・シェーダー作成
+	{
+		ComPtr<ID3DBlob> vertexShader;
+		ComPtr<ID3DBlob> pixelShader;
+#if defined(_DEBUG)
+		UINT compileFlag = D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION;
+#else
+		UINT compileFlag = 0;
+#endif
+		ThrowIfFailed(D3DCompileFromFile(GetAssetFullPath(L"VertexShader.hlsl").c_str(), nullptr, nullptr, "VSMain", "vs_5_0", compileFlag, 0, &vertexShader, nullptr));
+		ThrowIfFailed(D3DCompileFromFile(GetAssetFullPath(L"PixelShader.hlsl").c_str(), nullptr, nullptr, "PSMain", "ps_5_0", compileFlag, 0, &vertexShader, nullptr));
+
+		// 頂点レイアウト
+		D3D12_INPUT_ELEMENT_DESC inputElementDescs[] =
+		{
+			{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0}
+		};
+	}
+
 	// コマンドリストの作成
 	ThrowIfFailed(m_device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_commandAllocator.Get(), nullptr, IID_PPV_ARGS(&m_commandList)));
 
@@ -281,4 +304,9 @@ void D3D12Touka::WaitForPreviousFrame()
 	}
 
 	m_frameIndex = m_swapChain->GetCurrentBackBufferIndex();
+}
+
+std::wstring D3D12Touka::GetAssetFullPath(LPCWSTR assetName)
+{
+	return m_assetsPath + assetName;
 }

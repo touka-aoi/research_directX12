@@ -36,6 +36,8 @@ protected:
     UINT m_height;
     float m_aspectRatio;
 
+    std::wstring GetAssetFullPath(LPCWSTR assetName);
+
 private:
     static const UINT FrameCount = 2; // スワップチェーンの枚数
     
@@ -71,6 +73,7 @@ private:
 
     ComPtr<ID3D12CommandQueue> m_commandQueue;
 
+    std::wstring m_assetsPath;
 
     void WaitForPreviousFrame();
 };
