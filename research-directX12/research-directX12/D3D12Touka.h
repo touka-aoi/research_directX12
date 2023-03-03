@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include "DXHelper.h"
 #include "WinApplication.h"
+#include "Model.h"
 
 using Microsoft::WRL::ComPtr;
 using namespace DirectX;
@@ -63,8 +64,7 @@ private:
     UINT m_rtvDescriptorSize;
 
     // Application Resource
-    ComPtr<ID3D12Resource> m_vertexBuffer;
-    D3D12_VERTEX_BUFFER_VIEW m_vertexBufferView;
+    Model m_model;
 
 
     // 同期オブジェクト
