@@ -7,11 +7,17 @@ struct Vertex
 
 struct Mesh
 {
+	// 頂点データ
 	std::vector<Vertex> Vertices;
+
+	std::vector<unsigned short> Indices;
 
 	// リソース
 	D3D12_VERTEX_BUFFER_VIEW VBView;
+	D3D12_INDEX_BUFFER_VIEW IBView;
+
 	Microsoft::WRL::ComPtr<ID3D12Resource> VertexResources;
+	Microsoft::WRL::ComPtr<ID3D12Resource> IndexResource;
 };
 
 class Model

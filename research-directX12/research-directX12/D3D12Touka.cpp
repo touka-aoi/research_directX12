@@ -231,8 +231,10 @@ void D3D12Touka::PopulateCommandList()
 	const float clearColor[] = { 0.0f, 0.2f, 0.4f, 1.0f };
 	m_commandList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
 	m_commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	m_commandList->IASetIndexBuffer(&m_model.m_meshes.IBView);
 	m_commandList->IASetVertexBuffers(0, 1, &m_model.m_meshes.VBView);
-	m_commandList->DrawInstanced(3, 1, 0, 0);
+	//m_commandList->DrawInstanced(3, 1, 0, 0);
+	m_commandList->DrawIndexedInstanced(6, 1, 0, 0, 0);
 
 	// RTVをPresentにするバリア
 	m_resourceBarrier = CD3DX12_RESOURCE_BARRIER::Transition(m_renderTargets[m_frameIndex].Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT);
